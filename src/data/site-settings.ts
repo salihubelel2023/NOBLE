@@ -26,14 +26,19 @@ const FALLBACK_SETTINGS: SiteSettings = {
  * seeded yet, so the site never crashes on a missing settings row.
  */
 export async function getSiteSettings(): Promise<SiteSettings> {
-  const settings = await prisma.siteSettings.findUnique({ where: { id: "singleton" } });
-  if (!settings) return FALLBACK_SETTINGS;
-  return {
-    whatsappNumber: settings.whatsappNumber,
-    phone: settings.phone,
-    email: settings.email,
-    instagramUrl: settings.instagramUrl,
-    facebookUrl: settings.facebookUrl,
-    tagline: settings.tagline,
-  };
+  try {
+    const settings = await prisma.siteSettings.findUnique({ where: { id: "singleton" } });
+    if (!settings) return FALLBACK_SETTINGS;
+    return {
+      whatsappNumber: settings.whatsappNumber,
+      phone: settings.phone,
+      email: settings.email,
+      instagramUrl: settings.instagramUrl,
+      facebookUrl: settings.facebookUrl,
+      tagline: settings.tagline,
+    };
+  } catch (error) {
+    console.error("Unable to read site settings from the database, falling back to defaults:", error);
+    return FALLBACK_SETTINGS;
+  }
 }
