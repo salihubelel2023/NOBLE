@@ -1,5 +1,3 @@
-import { PolicyNav } from "@/components/policies/policy-nav";
-
 /**
  * The sidebar-plus-content shell is intentionally identical in structure to
  * the future Account page — reusing one "interior page" convention across
