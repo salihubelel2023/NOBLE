@@ -1,4 +1,22 @@
+import path from "path";
 import { PrismaClient } from "@prisma/client";
+
+function getPrismaDataSourceUrl(): string | undefined {
+  const rawUrl = process.env.DATABASE_URL;
+  if (!rawUrl) return undefined;
+
+  if (rawUrl.startsWith("file:")) {
+    const localPath = rawUrl.slice("file:".length);
+    const resolvedPath = path.resolve(process.cwd(), localPath);
+    return `file:${resolvedPath}`;
+  }
+
+  return rawUrl;
+}
+
+const prismaConfig = getPrismaDataSourceUrl()
+  ? { datasources: { db: { url: getPrismaDataSourceUrl() } } }
+  : undefined;
 
 /**
  * Standard Next.js + Prisma singleton pattern. Without this, every hot
@@ -9,7 +27,7 @@ import { PrismaClient } from "@prisma/client";
  */
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
-export const prisma = globalForPrisma.prisma ?? new PrismaClient();
+export const prisma = globalForPrisma.prisma ?? new PrismaClient(prismaConfig);
 
 if (process.env.NODE_ENV !== "production") {
   globalForPrisma.prisma = prisma;
