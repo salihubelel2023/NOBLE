@@ -1,0 +1,117 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+  NOBLE Design Tokens
+  --------------------
+  Raw brand values live here, in :root, as the single source of truth.
+  They are aliased into Tailwind's utility namespace below via @theme inline,
+  which is what makes classes like `bg-noble-black` or `text-noble-gold`
+  and semantic classes like `bg-background` / `text-foreground` available
+  everywhere in the app — see /ARCHITECTURE.md for the full rationale.
+*/
+:root {
+  /* Brand palette */
+  --noble-black: #0b0b0c;
+  --noble-white: #fafaf8;
+  --noble-ivory: #f3f1ec;
+  --noble-charcoal: #1c1c1e;
+  --noble-gold: #b8935a;
+  --noble-gold-deep: #8c6d3f;
+  --noble-grey: #6e6e73;
+  --noble-line: #e5e3dd;
+  --noble-success: #2f6844;
+  --noble-error: #a13a32;
+
+  /* Semantic tokens (consumed by shadcn/ui primitives) */
+  --background: var(--noble-white);
+  --foreground: var(--noble-black);
+  --card: var(--noble-white);
+  --card-foreground: var(--noble-black);
+  --popover: var(--noble-white);
+  --popover-foreground: var(--noble-black);
+  --border: var(--noble-line);
+  --input: var(--noble-line);
+  --ring: var(--noble-gold);
+  --primary: var(--noble-black);
+  --primary-foreground: var(--noble-white);
+  --secondary: var(--noble-ivory);
+  --secondary-foreground: var(--noble-black);
+  --muted: var(--noble-ivory);
+  --muted-foreground: var(--noble-grey);
+  --accent: var(--noble-gold);
+  --accent-foreground: var(--noble-black);
+  --destructive: var(--noble-error);
+  --destructive-foreground: var(--noble-white);
+
+  /* Sharp, machined radius — see design system: minimal radius, not rounded-friendly */
+  --radius: 0.125rem;
+}
+
+@theme inline {
+  --color-noble-black: var(--noble-black);
+  --color-noble-white: var(--noble-white);
+  --color-noble-ivory: var(--noble-ivory);
+  --color-noble-charcoal: var(--noble-charcoal);
+  --color-noble-gold: var(--noble-gold);
+  --color-noble-gold-deep: var(--noble-gold-deep);
+  --color-noble-grey: var(--noble-grey);
+  --color-noble-line: var(--noble-line);
+  --color-noble-success: var(--noble-success);
+  --color-noble-error: var(--noble-error);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+
+  /* Typography — see /ARCHITECTURE.md Section 8. Variables populated by next/font in layout.tsx */
+  --font-serif: var(--font-display);
+  --font-sans: var(--font-body);
+
+  --radius-sm: calc(var(--radius) - 0.0625rem);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 0.125rem);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+  ::selection {
+    background-color: var(--noble-gold);
+    color: var(--noble-white);
+  }
+}
+
+@layer utilities {
+  /* Hides scrollbar for horizontally-scrolling rows (collections, testimonials)
+     while keeping native touch/keyboard scroll behavior intact for accessibility. */
+  .scrollbar-none {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+}

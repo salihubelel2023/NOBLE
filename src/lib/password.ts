@@ -1,0 +1,27 @@
+import { randomBytes, scrypt as scryptCallback, timingSafeEqual } from "crypto";
+import { promisify } from "util";
+
+const scrypt = promisify(scryptCallback);
+const KEY_LENGTH = 64;
+
+/**
+ * Deliberately has ZERO Next.js imports (unlike lib/auth.ts, which needs
+ * next/headers). That matters because prisma/seed.ts runs as a standalone
+ * Node script via `tsx`, entirely outside the Next.js request runtime —
+ * importing next/headers there would fail immediately. Both lib/auth.ts
+ * and prisma/seed.ts import their password hashing from here instead.
+ */
+export async function hashPassword(password: string): Promise<string> {
+  const salt = randomBytes(16).toString("hex");
+  const derivedKey = (await scrypt(password, salt, KEY_LENGTH)) as Buffer;
+  return `${salt}:${derivedKey.toString("hex")}`;
+}
+
+export async function verifyPassword(password: string, storedHash: string): Promise<boolean> {
+  const [salt, key] = storedHash.split(":");
+  if (!salt || !key) return false;
+  const keyBuffer = Buffer.from(key, "hex");
+  const derivedKey = (await scrypt(password, salt, KEY_LENGTH)) as Buffer;
+  if (keyBuffer.length !== derivedKey.length) return false;
+  return timingSafeEqual(keyBuffer, derivedKey);
+}

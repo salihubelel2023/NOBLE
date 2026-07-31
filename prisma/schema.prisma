@@ -1,0 +1,167 @@
+// NOBLE — Prisma Schema
+//
+// SQLite for local development: zero external setup, a single file
+// (prisma/dev.db). Moving to real Postgres later is a two-line change —
+// `provider = "postgresql"` below, plus DATABASE_URL pointed at a real
+// database — because this schema deliberately avoids SQLite-incompatible
+// features. See ARCHITECTURE.md and ADMIN_SETUP.md.
+//
+// Note on JSON fields: `attributes` (Product) and `options`
+// (CategoryAttributeDefinition) are stored as `String` containing
+// JSON.stringify'd data, parsed at the data-layer boundary in
+// src/data/*.ts, rather than using Prisma's native `Json` scalar. This is
+// a deliberate, conservative choice — it works identically on SQLite and
+// Postgres with zero ambiguity, since this schema could not be validated
+// against a live database from the environment it was authored in.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  description String
+  displayOrder Int     @default(0)
+
+  attributes CategoryAttributeDefinition[]
+  products   Product[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model CategoryAttributeDefinition {
+  id           String @id @default(cuid())
+  categoryId   String
+  category     Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  key          String
+  label        String
+  inputType    String   // "select" | "range" | "color"
+  optionsJson  String   // JSON.stringify(string[]) — see note at top of file
+  isFilterable Boolean  @default(true)
+  displayOrder Int      @default(0)
+
+  @@unique([categoryId, key])
+}
+
+model Product {
+  id               String   @id @default(cuid())
+  slug             String   @unique
+  name             String
+  brand            String
+  categoryId       String
+  category         Category @relation(fields: [categoryId], references: [id])
+
+  shortDescription String
+  description      String
+  basePrice        Float
+  compareAtPrice   Float?
+  currency         String   @default("NGN")
+
+  attributesJson   String   // JSON.stringify(Record<string,string>) — see note at top of file
+  rating           Float    @default(0)
+  reviewCount      Int      @default(0)
+  isBestSeller     Boolean  @default(false)
+  isNew            Boolean  @default(false)
+  status           String   @default("in-stock") // "in-stock" | "low-stock" | "out-of-stock"
+  // Per-product, not a site-wide setting — different pieces ship on
+  // different timelines. Editable per product in /admin/products.
+  shippingEstimate String   @default("Ships in 24–48h")
+
+  images   ProductImage[]
+  variants ProductVariant[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([categoryId])
+}
+
+model ProductImage {
+  id           String  @id @default(cuid())
+  productId    String
+  product      Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  url          String
+  alt          String
+  displayOrder Int     @default(0)
+}
+
+model ProductVariant {
+  id            String  @id @default(cuid())
+  productId     String
+  product       Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sku           String  @unique
+  label         String
+  priceOverride Float?
+  stockQuantity Int     @default(0)
+}
+
+model Order {
+  id              String @id @default(cuid())
+  orderNumber     String @unique
+  customerEmail   String
+  customerName    String
+  shippingAddress String
+  city            String
+  phone           String
+  paymentMethod   String // "card" | "bank-transfer" | "pod"
+  status          String @default("processing") // "processing" | "shipped" | "delivered" | "cancelled"
+  subtotal        Float
+  currency        String @default("NGN")
+
+  items OrderItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model OrderItem {
+  id           String @id @default(cuid())
+  orderId      String
+  order        Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  variantId    String
+  productName  String
+  variantLabel String
+  quantity     Int
+  // Snapshotted at the moment of order — never recalculated from a live
+  // product price later. See ARCHITECTURE.md Section 4.
+  unitPrice    Float
+}
+
+model SiteSettings {
+  // Single-row table: always fetched/updated by this fixed id.
+  id             String @id @default("singleton")
+  whatsappNumber String
+  phone          String
+  email          String
+  instagramUrl   String
+  facebookUrl    String
+  tagline        String
+  updatedAt      DateTime @updatedAt
+}
+
+model AdminUser {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  sessions     Session[]
+  createdAt    DateTime  @default(now())
+}
+
+model Session {
+  id        String    @id @default(cuid())
+  userId    String
+  user      AdminUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
